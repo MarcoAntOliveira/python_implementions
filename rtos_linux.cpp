@@ -29,6 +29,8 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <new>
+#include <memory>
 
 using namespace std::chrono_literals;
 using std::placeholders::_1;

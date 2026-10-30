@@ -1,0 +1,7 @@
+/home/marcos/projects/python_implementations/build/CMakeFiles/uninstall.dir
+/home/marcos/projects/python_implementations/build/CMakeFiles/cpp_test_uninstall.dir
+/home/marcos/projects/python_implementations/build/CMakeFiles/node.dir
+/home/marcos/projects/python_implementations/build/CMakeFiles/node2.dir
+/home/marcos/projects/python_implementations/build/CMakeFiles/test.dir
+/home/marcos/projects/python_implementations/build/CMakeFiles/edit_cache.dir
+/home/marcos/projects/python_implementations/build/CMakeFiles/rebuild_cache.dir

@@ -1,14 +1,18 @@
 import random
 import rclpy
 from std_msgs.msg import Float32
+import sympy as sp
 
-
+kp, ki, kd, s = sp.symbols('kp ki kd s')
 class PID:
     def __init__(self, kp, ki, kd, out_min, out_max):
         self.kp, self.ki, self.kd = kp, ki, kd
         self.out_min, self.out_max = out_min, out_max
         self.integral = 0.0      # já em unidades de saída (W)
         self.prev_pv = None
+
+
+    
 
     def update(self, setpoint, pv, dt):
         error = setpoint - pv

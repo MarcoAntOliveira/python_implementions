@@ -1,0 +1,16 @@
+[ 25%] Building CXX object CMakeFiles/node.dir/rtos.cpp.o
+/home/marcos/projects/python_implementations/rtos.cpp:1:1: error: ‘q’ does not name a type
+    1 | q// Copyright 2024 Intelligent Robotics Lab
+      | ^
+In file included from /usr/include/c++/13/iosfwd:42,
+                 from /usr/include/c++/13/ios:40,
+                 from /usr/include/c++/13/istream:40,
+                 from /usr/include/c++/13/fstream:40,
+                 from /home/marcos/projects/python_implementations/rtos.cpp:15:
+/usr/include/c++/13/bits/postypes.h:68:11: error: ‘ptrdiff_t’ does not name a type
+   68 |   typedef ptrdiff_t     streamsize; // Signed integral type
+      |           ^~~~~~~~~
+/usr/include/c++/13/bits/postypes.h:41:1: note: ‘ptrdiff_t’ is defined in header ‘<cstddef>’; did you forget to ‘#include <cstddef>’?
+   40 | #include <cwchar> // For mbstate_t
+  +++ |+#include <cstddef>
+   41 | 
