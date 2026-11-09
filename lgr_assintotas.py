@@ -68,4 +68,4 @@ ax.set_aspect("equal")
 
 plt.tight_layout()
 plt.savefig("lgr_assintotas.png", dpi=150)
-print("Salvo em lgr_assintotas.png")
+print("Salvo em lgr_assintotas.png")    

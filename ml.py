@@ -69,42 +69,105 @@ class NeuralNetwork:
                 delta = (self.weights[i].T @ delta) * sigmoid_deriv(self.zs[i-1])
             self.weights[i] -= lr * dW
             self.biases[i]  -= lr * db
+       # ---------- ACRESCENTADO ----------
+
+    # 1. train(X, y, epochs, lr)
+
+    # O que faz: repete forward + backward várias vezes e imprime a perda de tempos em tempos.
+    # Por que: a sua classe só tinha um passo de aprendizado (backward). Uma rede só aprende 
+    # depois de milhares de passos, então alguém precisa ficar chamando o laço. Antes eu deixava
+    # isso solto fora da classe; agora fica encapsulado.
+    def train(self, X, y, epochs=3000, lr=0.5, verbose=True):
+        for ep in range(epochs):
+            A = self.forward(X)
+            self.backward(y, lr)
+            if verbose and ep % 500 == 0:
+                print(ep, "loss:", np.mean((A - y) ** 2))
+    # 2. predict(X)
+
+    # O que faz: roda o forward e devolve a classe vencedora (argmax) e a confiança (max).
+    # Por que: o forward devolve 10 probabilidades. Para usar no ROS você precisa de “qual classe é” e 
+    # “quão certa a rede está”. A confiança serve pra descartar leituras duvidosas 
+    # (por exemplo, só agir se conf > 0.8).
+    def predict(self, X):
+        A = self.forward(X)
+        return A.argmax(axis=0), A.max(axis=0)      # classe e confiança
+
+    def save(self, path):
+        np.savez(path, *self.weights, *self.biases, n=len(self.weights))
+        
+    @classmethod
+    def load(cls, path):
+        d = np.load(path)
+        n = int(d["n"])
+        net = cls.__new__(cls)
+        net.weights = [d[f"arr_{i}"] for i in range(n)]
+        net.biases  = [d[f"arr_{i}"] for i in range(n, 2 * n)]
+        return net
 
 class KMeans:
-    def __init__(self, k=3, max_iters=100):
+    def __init__(self, k=3, max_iters=100, n_init=10, tol=1e-4, seed=None):
         self.k = k
         self.max_iters = max_iters
+        self.n_init = n_init
+        self.tol = tol
+        self.rng = np.random.default_rng(seed)
 
+    # ---------- helpers ----------
+    @staticmethod
+    def _sq_dists(X, C):
+        # (n, k): distância² de cada ponto a cada centroide, vetorizado
+        return ((X[:, None, :] - C[None, :, :]) ** 2).sum(axis=2)
 
-    def fit(self, X):
-        # Random init: pick K points from data as starting centroids
-        idx = np.random.choice(len(X), self.k, replace=False)
-        self.centroids = X[idx]
+    def _init_plus_plus(self, X):
+        n = len(X)
+        C = [X[self.rng.integers(n)]]
+        for _ in range(1, self.k):
+            d2 = self._sq_dists(X, np.array(C)).min(axis=1)
+            total = d2.sum()
+            if total == 0:                       # todos os pontos iguais aos centroides
+                C.append(X[self.rng.integers(n)])
+                continue
+            C.append(X[self.rng.choice(n, p=d2 / total)])
+        return np.array(C)
 
-
+    def _run_once(self, X):
+        C = self._init_plus_plus(X)
         for _ in range(self.max_iters):
-            # Assign step: compute distances to each centroid
-            distances = np.array([
-                np.linalg.norm(X - c, axis=1) for c in self.centroids
-            ])  # shape: (k, n_samples)
-            labels = np.argmin(distances, axis=0)
+            labels = self._sq_dists(X, C).argmin(axis=1)
 
+            new_C = C.copy()
+            for j in range(self.k):
+                members = X[labels == j]
+                if len(members):                 # cluster vazio: mantém o centroide antigo
+                    new_C[j] = members.mean(axis=0)
 
-            # Update step: new centroid = mean of cluster members
-            new_centroids = np.array([
-                X[labels == k].mean(axis=0) for k in range(self.k)
-            ])
-
-
-            # Convergence check
-            if np.allclose(self.centroids, new_centroids):
+            shift = np.linalg.norm(new_C - C)
+            C = new_C
+            if shift < self.tol:
                 break
-            self.centroids = new_centroids
 
+        d2 = self._sq_dists(X, C)
+        labels = d2.argmin(axis=1)
+        inertia = d2[np.arange(len(X)), labels].sum()
+        return C, labels, inertia
 
-        self.labels = labels
+    # ---------- API ----------
+    def fit(self, X):
+        X = np.asarray(X, dtype=float)
+        if self.k > len(X):
+            raise ValueError("k não pode ser maior que o número de amostras")
+
+        best = None
+        for _ in range(self.n_init):
+            result = self._run_once(X)
+            if best is None or result[2] < best[2]:
+                best = result
+        self.centroids, self.labels, self.inertia_ = best
         return self
 
+    def predict(self, X):
+        return self._sq_dists(np.asarray(X, dtype=float), self.centroids).argmin(axis=1)
 class NaiveBayes:
     def fit(self, X, y):
         self.classes = np.unique(y)
